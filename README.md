@@ -1,0 +1,2 @@
+# KioskSample
+Kiosk sample app.
