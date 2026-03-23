@@ -1,5 +1,6 @@
 package test.android.kiosk.provider
 
+import android.app.ActivityManager
 import android.app.admin.DevicePolicyManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -11,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
@@ -23,6 +25,9 @@ internal class FinalAdmins(
 ) : Admins {
     private val _owners: MutableStateFlow<Boolean>
     override val owners: StateFlow<Boolean>
+
+    private val _locked: MutableStateFlow<Boolean>
+    override val locked: StateFlow<Boolean>
 
     private fun onDeviceOwner(isDeviceOwner: Boolean) {
         if (!isDeviceOwner) return
@@ -64,6 +69,18 @@ internal class FinalAdmins(
             withContext(default) {
                 _owners.collect { isDeviceOwner ->
                     onDeviceOwner(isDeviceOwner = isDeviceOwner)
+                }
+            }
+        }
+        //
+        val am = context.getSystemService(ActivityManager::class.java)
+        _locked = MutableStateFlow(am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE)
+        locked = _locked.asStateFlow()
+        coroutineScope.launch {
+            withContext(default) {
+                while (isActive) {
+                    _locked.value = am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
+                    delay(1.seconds)
                 }
             }
         }
