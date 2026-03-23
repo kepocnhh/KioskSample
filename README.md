@@ -21,4 +21,10 @@ $ adb shell dpm list-owners
 $ adb shell dpm remove-active-admin test.android.kiosk.debug/test.android.kiosk.MainDeviceAdminReceiver
 ```
 
+#### Force stop
+
+```
+$ adb shell am force-stop test.android.kiosk.debug
+```
+
 ---
