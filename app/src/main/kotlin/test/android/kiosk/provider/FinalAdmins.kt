@@ -1,0 +1,78 @@
+package test.android.kiosk.provider
+
+import android.app.admin.DevicePolicyManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration.Companion.seconds
+
+internal class FinalAdmins(
+    private val context: Context,
+    private val coroutineScope: CoroutineScope,
+    private val default: CoroutineContext,
+) : Admins {
+    private val _owners: MutableStateFlow<Boolean>
+    override val owners: StateFlow<Boolean>
+
+    private fun onDeviceOwner(isDeviceOwner: Boolean) {
+        if (!isDeviceOwner) return
+        coroutineScope.launch {
+            withContext(default) {
+                val dm = context.getSystemService(DevicePolicyManager::class.java)
+                while (_owners.value) {
+                    if (!dm.isDeviceOwnerApp(context.packageName)) {
+                        _owners.value = false
+                        break
+                    }
+                    delay(1.seconds)
+                }
+            }
+        }
+    }
+
+    init {
+        val dm = context.getSystemService(DevicePolicyManager::class.java)
+        _owners = MutableStateFlow(dm.isDeviceOwnerApp(context.packageName))
+        owners = _owners.asStateFlow()
+        val receivers = object : BroadcastReceiver() {
+            override fun onReceive(_context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    DevicePolicyManager.ACTION_DEVICE_OWNER_CHANGED -> {
+                        _owners.value = dm.isDeviceOwnerApp(context.packageName)
+                    }
+                }
+            }
+        }
+        val filters = IntentFilter()
+        filters.addAction(DevicePolicyManager.ACTION_DEVICE_OWNER_CHANGED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receivers, filters, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            context.registerReceiver(receivers, filters)
+        }
+        coroutineScope.launch {
+            withContext(default) {
+                _owners.collect { isDeviceOwner ->
+                    onDeviceOwner(isDeviceOwner = isDeviceOwner)
+                }
+            }
+        }
+    }
+
+    override fun update(isDeviceOwner: Boolean) {
+        if (_owners.value == isDeviceOwner) return
+        if (isDeviceOwner) error("Set an app the device owner is not supported!")
+        val dm = context.getSystemService(DevicePolicyManager::class.java)
+        dm.clearDeviceOwnerApp(context.packageName)
+    }
+}
