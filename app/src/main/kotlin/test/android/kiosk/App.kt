@@ -8,6 +8,8 @@ import kotlinx.coroutines.SupervisorJob
 import test.android.kiosk.provider.Admins
 import test.android.kiosk.provider.Contexts
 import test.android.kiosk.provider.FinalAdmins
+import test.android.kiosk.provider.FinalLoggers
+import test.android.kiosk.provider.Loggers
 import test.android.kiosk.provider.Providers
 
 internal class App : Application() {
@@ -25,9 +27,11 @@ internal class App : Application() {
             coroutineScope = coroutineScope,
             default = contexts.default,
         )
+        val loggers: Loggers = FinalLoggers
         _providers = Providers(
             contexts = contexts,
             admins = admins,
+            loggers = loggers,
         )
     }
 
