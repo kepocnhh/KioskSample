@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,6 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 @Composable
 internal fun MainScreen() {
@@ -31,6 +35,16 @@ internal fun MainScreen() {
     val isLocked = providers.admins.locked.collectAsState().value
     val context = LocalContext.current
     val activity = LocalActivity.current ?: TODO()
+    LaunchedEffect(Unit) {
+        ViewCompat.setOnApplyWindowInsetsListener(activity.window.decorView) { _, _ ->
+            if (providers.admins.locked.value) {
+                val controller = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+                controller.hide(WindowInsetsCompat.Type.navigationBars())
+                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+            WindowInsetsCompat.CONSUMED
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -79,6 +93,9 @@ internal fun MainScreen() {
                                     flags,
                                 )
                                 activity.startLockTask()
+                                val controller = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+                                controller.hide(WindowInsetsCompat.Type.navigationBars())
+                                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                             }
                         }
                         .wrapContentSize(),
