@@ -9,12 +9,13 @@ import android.content.IntentFilter
 import android.os.Build
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.seconds
 
@@ -26,8 +27,28 @@ internal class FinalAdmins(
     private val _owners: MutableStateFlow<Boolean>
     override val owners: StateFlow<Boolean>
 
-    private val _locked: MutableStateFlow<Boolean>
-    override val locked: StateFlow<Boolean>
+    override val locked = object : StateFlow<Boolean> {
+        override val value: Boolean
+            get() {
+                val am = context.getSystemService(ActivityManager::class.java)
+                val isLocked = am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
+                return isLocked
+            }
+        override val replayCache: List<Boolean> = emptyList()
+
+        override suspend fun collect(collector: FlowCollector<Boolean>): Nothing {
+            val am = context.getSystemService(ActivityManager::class.java)
+            val lockedState = AtomicBoolean(am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE)
+            collector.emit(lockedState.get())
+            while (true) {
+                val isLocked = am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
+                if (lockedState.compareAndSet(!isLocked, isLocked)) {
+                    collector.emit(isLocked)
+                }
+                delay(1.seconds)
+            }
+        }
+    }
 
     private fun onDeviceOwner(isDeviceOwner: Boolean) {
         if (!isDeviceOwner) return
@@ -69,18 +90,6 @@ internal class FinalAdmins(
             withContext(default) {
                 _owners.collect { isDeviceOwner ->
                     onDeviceOwner(isDeviceOwner = isDeviceOwner)
-                }
-            }
-        }
-        //
-        val am = context.getSystemService(ActivityManager::class.java)
-        _locked = MutableStateFlow(am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE)
-        locked = _locked.asStateFlow()
-        coroutineScope.launch {
-            withContext(default) {
-                while (isActive) {
-                    _locked.value = am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
-                    delay(1.seconds)
                 }
             }
         }
