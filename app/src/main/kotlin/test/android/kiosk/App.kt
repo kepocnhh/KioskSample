@@ -9,7 +9,9 @@ import test.android.kiosk.provider.Admins
 import test.android.kiosk.provider.Contexts
 import test.android.kiosk.provider.FinalAdmins
 import test.android.kiosk.provider.FinalLoggers
+import test.android.kiosk.provider.FinalPackages
 import test.android.kiosk.provider.Loggers
+import test.android.kiosk.provider.Packages
 import test.android.kiosk.provider.Providers
 
 internal class App : Application() {
@@ -28,10 +30,12 @@ internal class App : Application() {
             default = contexts.default,
         )
         val loggers: Loggers = FinalLoggers
+        val packages: Packages = FinalPackages(context = context)
         _providers = Providers(
             contexts = contexts,
             admins = admins,
             loggers = loggers,
+            packages = packages,
         )
     }
 
