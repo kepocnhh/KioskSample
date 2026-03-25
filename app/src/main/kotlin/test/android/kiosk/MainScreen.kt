@@ -32,6 +32,7 @@ internal fun MainScreen() {
     val isLocked = providers.admins.locked.collectAsState().value
     val context = LocalContext.current
     val activity = LocalActivity.current ?: TODO()
+    val packageName = "sp.sample.animations.debug" // todo
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -96,6 +97,16 @@ internal fun MainScreen() {
                     text = if (isLocked) "unlock" else "lock",
                 )
             }
+            BasicText(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clickable {
+                        providers.packages.launch(packageName = packageName)
+                    }
+                    .wrapContentSize(),
+                text = "launch: $packageName",
+            )
         }
     }
 }
