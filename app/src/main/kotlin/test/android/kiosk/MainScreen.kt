@@ -71,26 +71,27 @@ internal fun MainScreen() {
                         .fillMaxWidth()
                         .height(48.dp)
                         .clickable {
+                            val dm = context.getSystemService(DevicePolicyManager::class.java)
+                            val admin = ComponentName(context, MainDeviceAdminReceiver::class.java)
                             if (isLocked) {
-                                activity.stopLockTask()
-                                val controller = WindowInsetsControllerCompat(
-                                    activity.window,
-                                    activity.window.decorView
-                                )
-                                controller.show(WindowInsetsCompat.Type.navigationBars())
-                                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+                                dm.setLockTaskPackages(admin, arrayOf())
+//                                val controller = WindowInsetsControllerCompat(
+//                                    activity.window,
+//                                    activity.window.decorView
+//                                )
+//                                controller.show(WindowInsetsCompat.Type.navigationBars())
+//                                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
                             } else {
-                                val dm = context.getSystemService(DevicePolicyManager::class.java)
-                                val admin = ComponentName(context, MainDeviceAdminReceiver::class.java)
-                                dm.setLockTaskPackages(admin, arrayOf(context.packageName))
+                                dm.setLockTaskPackages(admin, arrayOf(packageName))
                                 dm.setLockTaskFeatures(admin, DevicePolicyManager.LOCK_TASK_FEATURE_NONE)
-                                activity.startLockTask()
-                                val controller = WindowInsetsControllerCompat(
-                                    activity.window,
-                                    activity.window.decorView
-                                )
-                                controller.hide(WindowInsetsCompat.Type.navigationBars())
-                                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                                providers.packages.launch(packageName = packageName, needsLockTask = true)
+//                                activity.startLockTask()
+//                                val controller = WindowInsetsControllerCompat(
+//                                    activity.window,
+//                                    activity.window.decorView
+//                                )
+//                                controller.hide(WindowInsetsCompat.Type.systemBars())
+//                                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                             }
                         }
                         .wrapContentSize(),
@@ -102,7 +103,7 @@ internal fun MainScreen() {
                     .fillMaxWidth()
                     .height(48.dp)
                     .clickable {
-                        providers.packages.launch(packageName = packageName)
+                        providers.packages.launch(packageName = packageName, false)
                     }
                     .wrapContentSize(),
                 text = "launch: $packageName",
