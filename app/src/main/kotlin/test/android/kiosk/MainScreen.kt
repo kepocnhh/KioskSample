@@ -2,7 +2,6 @@ package test.android.kiosk
 
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -21,8 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 
 @Composable
 internal fun MainScreen() {
@@ -31,7 +28,6 @@ internal fun MainScreen() {
     val isDeviceOwner = providers.admins.owners.collectAsState().value
     val isLocked = providers.admins.locked.collectAsState().value
     val context = LocalContext.current
-    val activity = LocalActivity.current ?: TODO()
     val packageName = "sp.sample.animations.debug" // todo
     Box(
         modifier = Modifier
@@ -75,23 +71,10 @@ internal fun MainScreen() {
                             val admin = ComponentName(context, MainDeviceAdminReceiver::class.java)
                             if (isLocked) {
                                 dm.setLockTaskPackages(admin, arrayOf())
-//                                val controller = WindowInsetsControllerCompat(
-//                                    activity.window,
-//                                    activity.window.decorView
-//                                )
-//                                controller.show(WindowInsetsCompat.Type.navigationBars())
-//                                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
                             } else {
                                 dm.setLockTaskPackages(admin, arrayOf(packageName))
                                 dm.setLockTaskFeatures(admin, DevicePolicyManager.LOCK_TASK_FEATURE_NONE)
                                 providers.packages.launch(packageName = packageName, needsLockTask = true)
-//                                activity.startLockTask()
-//                                val controller = WindowInsetsControllerCompat(
-//                                    activity.window,
-//                                    activity.window.decorView
-//                                )
-//                                controller.hide(WindowInsetsCompat.Type.systemBars())
-//                                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                             }
                         }
                         .wrapContentSize(),
