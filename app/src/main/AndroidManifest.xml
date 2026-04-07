@@ -6,6 +6,7 @@
     </queries>
 
     <application
+        android:theme="@style/App.Theme"
         android:label="KioskSample"
         android:name=".App">
         <activity android:name=".MainActivity"

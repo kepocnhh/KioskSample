@@ -28,7 +28,7 @@ internal fun MainScreen() {
     val isDeviceOwner = providers.admins.owners.collectAsState().value
     val isLocked = providers.admins.locked.collectAsState().value
     val context = LocalContext.current
-    val packageName = "sp.sample.animations.debug" // todo
+    val packageName = BuildConfig.APPLICATION_ID
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -73,7 +73,9 @@ internal fun MainScreen() {
                                 dm.setLockTaskPackages(admin, arrayOf())
                             } else {
                                 dm.setLockTaskPackages(admin, arrayOf(packageName))
-                                dm.setLockTaskFeatures(admin, DevicePolicyManager.LOCK_TASK_FEATURE_NONE)
+                                var flags = DevicePolicyManager.LOCK_TASK_FEATURE_NONE
+                                flags = flags or DevicePolicyManager.LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK
+                                dm.setLockTaskFeatures(admin, flags)
                                 providers.packages.launch(packageName = packageName, needsLockTask = true)
                             }
                         }
@@ -86,7 +88,7 @@ internal fun MainScreen() {
                     .fillMaxWidth()
                     .height(48.dp)
                     .clickable {
-                        providers.packages.launch(packageName = packageName, false)
+                        providers.packages.launch(packageName = packageName, needsLockTask = false)
                     }
                     .wrapContentSize(),
                 text = "launch: $packageName",
