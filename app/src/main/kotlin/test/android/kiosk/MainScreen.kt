@@ -70,17 +70,29 @@ internal fun MainScreen() {
                         .height(48.dp)
                         .clickable {
                             val dm = context.getSystemService(DevicePolicyManager::class.java)
+                            val isDeviceOwner = dm.isDeviceOwnerApp(context.packageName)
+                            if (!isDeviceOwner) TODO()
+                            val admin = ComponentName(context, MainDeviceAdminReceiver::class.java)
+                            dm.reboot(admin)
+                        }
+                        .wrapContentSize(),
+                    text = "reboot",
+                )
+                BasicText(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clickable {
+                            val dm = context.getSystemService(DevicePolicyManager::class.java)
                             val admin = ComponentName(context, MainDeviceAdminReceiver::class.java)
                             if (isLocked) {
                                 dm.setLockTaskPackages(admin, arrayOf())
-                                providers.admins.statusBarDisplay = true
                             } else {
                                 dm.setLockTaskPackages(admin, lockTaskIssuers)
                                 var flags = DevicePolicyManager.LOCK_TASK_FEATURE_NONE
                                 flags = flags or DevicePolicyManager.LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK
                                 dm.setLockTaskFeatures(admin, flags)
                                 providers.packages.launch(packageName = lockTaskIssuer, needsLockTask = true)
-                                providers.admins.statusBarDisplay = false
                             }
                         }
                         .wrapContentSize(),
