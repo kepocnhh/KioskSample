@@ -7,16 +7,20 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import com.sdkapi.api.SdkApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 internal class FinalAdmins(
@@ -93,6 +97,17 @@ internal class FinalAdmins(
                 }
             }
         }
+        SdkApi.newInstance(context)
+        coroutineScope.launch {
+            withContext(default) {
+                withTimeout(2.seconds) {
+                    while (isActive) {
+                        if (SdkApi.getInstance().serviceConnectionStatus) break
+                        delay(250.milliseconds)
+                    }
+                }
+            }
+        }
     }
 
     override fun update(isDeviceOwner: Boolean) {
@@ -101,4 +116,12 @@ internal class FinalAdmins(
         val dm = context.getSystemService(DevicePolicyManager::class.java)
         dm.clearDeviceOwnerApp(context.packageName)
     }
+
+    override var statusBarDisplay: Boolean
+        get() {
+            return SdkApi.getInstance().SystemCtrl().statusBarDisplay
+        }
+        set(value) {
+            SdkApi.getInstance().SystemCtrl().statusBarDisplay = value
+        }
 }

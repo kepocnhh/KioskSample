@@ -28,7 +28,9 @@ internal fun MainScreen() {
     val isDeviceOwner = providers.admins.owners.collectAsState().value
     val isLocked = providers.admins.locked.collectAsState().value
     val context = LocalContext.current
-    val packageName = BuildConfig.APPLICATION_ID
+//    val lockTaskIssuers = arrayOf(BuildConfig.APPLICATION_ID)
+    val lockTaskIssuers = arrayOf("com.speechpro.pacssberclient.logs.fs8")
+    val lockTaskIssuer = lockTaskIssuers.firstOrNull() ?: TODO()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -71,12 +73,14 @@ internal fun MainScreen() {
                             val admin = ComponentName(context, MainDeviceAdminReceiver::class.java)
                             if (isLocked) {
                                 dm.setLockTaskPackages(admin, arrayOf())
+                                providers.admins.statusBarDisplay = true
                             } else {
-                                dm.setLockTaskPackages(admin, arrayOf(packageName))
+                                dm.setLockTaskPackages(admin, lockTaskIssuers)
                                 var flags = DevicePolicyManager.LOCK_TASK_FEATURE_NONE
                                 flags = flags or DevicePolicyManager.LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK
                                 dm.setLockTaskFeatures(admin, flags)
-                                providers.packages.launch(packageName = packageName, needsLockTask = true)
+                                providers.packages.launch(packageName = lockTaskIssuer, needsLockTask = true)
+                                providers.admins.statusBarDisplay = false
                             }
                         }
                         .wrapContentSize(),
@@ -88,10 +92,10 @@ internal fun MainScreen() {
                     .fillMaxWidth()
                     .height(48.dp)
                     .clickable {
-                        providers.packages.launch(packageName = packageName, needsLockTask = false)
+                        providers.packages.launch(packageName = lockTaskIssuer, needsLockTask = false)
                     }
                     .wrapContentSize(),
-                text = "launch: $packageName",
+                text = "launch: $lockTaskIssuer",
             )
         }
     }
